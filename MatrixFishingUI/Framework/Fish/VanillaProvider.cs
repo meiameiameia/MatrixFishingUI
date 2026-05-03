@@ -128,36 +128,34 @@ public class VanillaProvider : IFishProvider {
 					{
 						case "158":
 						{
-							// UndergroundMine20
-							var floor20 = Game1.RequireLocation("UndergroundMine20");
 							fishInfo.CatchInfo.Locations
 								.Add(new SpawningCondition(
-									new LocationArea(floor20.NameOrUniqueName,"UndergroundMine20", floor20.NameOrUniqueName),
+									new LocationArea("UndergroundMine20", "UndergroundMine20", "UndergroundMine20"),
 									allSeasons.ToList()));
 							break;
 						}
 						case "161":
 						{
-							// UndergroundMine60
-							var floor60 = Game1.RequireLocation("UndergroundMine60");
 							fishInfo.CatchInfo.Locations
 								.Add(new SpawningCondition(
-									new LocationArea(floor60.NameOrUniqueName,"UndergroundMine60", floor60.NameOrUniqueName),
+									new LocationArea("UndergroundMine60", "UndergroundMine60", "UndergroundMine60"),
 									allSeasons.ToList()));
 							break;
 						}
 						case "162":
 						{
-							// UndergroundMine100
-							var floor100 = Game1.RequireLocation("UndergroundMine100");
 							fishInfo.CatchInfo.Locations
 								.Add(new SpawningCondition(
-									new LocationArea(floor100.NameOrUniqueName,"UndergroundMine100", floor100.NameOrUniqueName),
+									new LocationArea("UndergroundMine100", "UndergroundMine100", "UndergroundMine100"),
 									allSeasons.ToList()));
 							break;
 						}
 					}
-					fishInfo.CatchInfo.Difficulty = ParseInt(section, "Difficulty", id, defaultValue: 0);
+					var difficulty = section.Trim();
+					fishInfo.CatchInfo.Difficulty =
+						difficulty.Length == 0 || difficulty.Equals("null", StringComparison.OrdinalIgnoreCase)
+							? 0
+							: ParseInt(difficulty, "Difficulty", id, defaultValue: 0);
 				}
 			}
 
@@ -257,7 +255,7 @@ public class VanillaProvider : IFishProvider {
 		foreach (var pond in pondData)
 		{
 			var matched = true;
-			foreach (var tag in pond.RequiredTags)
+			foreach (var tag in pond.RequiredTags ?? [])
 			{
 				if (fishInfo.Item.HasContextTag(tag)) continue;
 				matched = false;
@@ -288,8 +286,12 @@ public class VanillaProvider : IFishProvider {
 			pondInfo.Initial = initial;
 			pondInfo.ProducedItems = correctPond.ProducedItems
 				.Select(x => x.ItemId)
+				.Where(x => !string.IsNullOrWhiteSpace(x))
 				.Distinct()
-				.Select(x => (x == "812" ? FishHelper.GetRoeForFish((SObject)fishInfo.Item) : ItemRegistry.Create(x, 1)))
+				.Select(x => x == "812"
+					? FishHelper.GetRoeForFish((SObject)fishInfo.Item)
+					: ItemRegistry.Create(x, 1, allowNull: true))
+				.OfType<Item>()
 				.ToList();
 			pondInfo.FishPondRewards = correctPond.ProducedItems;
 		}

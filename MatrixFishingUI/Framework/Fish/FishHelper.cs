@@ -188,7 +188,7 @@ public static class FishHelper
 
         void AddSpawningCondition(HashSet<Season> seasons, SpawnFishData fish, List<string>? specialConditions = null)
         {
-            if (fish.RandomItemId is not null && fish.RandomItemId.Count <= 0)
+            if (fish.RandomItemId is not null && fish.RandomItemId.Count > 0)
             {
                 foreach (var fishId in fish.RandomItemId)
                 {
@@ -253,6 +253,7 @@ public static class FishHelper
     {
         var conditions = conditionQuery.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         var result = new HashSet<Season>();
+        var sawHere = false;
         foreach (var condition in conditions)
         {
             var split = condition.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -260,7 +261,11 @@ public static class FishHelper
             for (var i = 1; i < split.Length; i++)
             {
                 var rawSeason = split[i];
-                if(rawSeason.Equals("Here", StringComparison.OrdinalIgnoreCase)) continue;
+                if (rawSeason.Equals("Here", StringComparison.OrdinalIgnoreCase))
+                {
+                    sawHere = true;
+                    continue;
+                }
                 if (rawSeason.Equals("spring", StringComparison.OrdinalIgnoreCase)) result.Add(Season.Spring);
                 else if (rawSeason.Equals("summer", StringComparison.OrdinalIgnoreCase)) result.Add(Season.Summer);
                 else if (rawSeason.Equals("fall", StringComparison.OrdinalIgnoreCase)) result.Add(Season.Fall);
@@ -268,9 +273,13 @@ public static class FishHelper
                 else ModEntry.LogError($"Unknown Season caught when parsing: {conditionQuery}, Split: {rawSeason}");
             }
         }
-        
 
-        return result.Count == 0 ? null : result;
+        if (result.Count == 0)
+        {
+            return sawHere ? Enum.GetValues<Season>().ToHashSet() : null;
+        }
+
+        return result;
     }
     
     private static List<string> ParseConditionGeneric(string conditionQuery)
